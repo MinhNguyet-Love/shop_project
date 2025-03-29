@@ -1,40 +1,77 @@
-import React from "react";
-import { Container, Table, Button } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { db, auth } from "../config/firebase";
 
 const Cart = () => {
-  const cartItems = [
-    { id: 1, name: "Sản phẩm A", price: "200.000đ", quantity: 1 },
-  ];
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not logged in");
+
+        const cartSnapshot = await getDocs(collection(db, "carts"));
+        const userCart = cartSnapshot.docs.find(
+          (doc) => doc.data().customer_id === user.uid
+        );
+
+        if (userCart) {
+          const cartItemsSnapshot = await getDocs(
+            collection(db, `carts/${userCart.id}/cart_items`)
+          );
+          const items = await Promise.all(
+            cartItemsSnapshot.docs.map(async (itemDoc) => {
+              const productDoc = await getDoc(
+                doc(db, "products", itemDoc.data().product_id)
+              );
+              return {
+                id: itemDoc.id,
+                ...itemDoc.data(),
+                product: productDoc.exists() ? productDoc.data() : null,
+              };
+            })
+          );
+          setCartItems(items);
+        }
+      } catch (error) {
+        console.error("Error fetching cart:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCart();
+  }, []);
+
+  if (loading) return <p>Loading cart...</p>;
 
   return (
-    <Container className="mt-4">
-      <h2>Giỏ Hàng</h2>
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Sản phẩm</th>
-            <th>Giá</th>
-            <th>Số lượng</th>
-            <th>Thành tiền</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cartItems.map((item) => (
-            <tr key={item.id}>
-              <td>{item.name}</td>
-              <td>{item.price}</td>
-              <td>{item.quantity}</td>
-              <td>{parseInt(item.price.replace(/\D/g, "")) * item.quantity}đ</td>
-              <td>
-                <Button variant="danger">Xóa</Button>
-              </td>
+    <div className="container my-5">
+      <h2>Your Cart</h2>
+      {cartItems.length > 0 ? (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Price</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
-      <Button variant="primary">Thanh toán</Button>
-    </Container>
+          </thead>
+          <tbody>
+            {cartItems.map((item) => (
+              <tr key={item.id}>
+                <td>{item.product?.name || "Unknown Product"}</td>
+                <td>{item.quantity}</td>
+                <td>${item.product?.price * item.quantity || 0}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>Your cart is empty.</p>
+      )}
+    </div>
   );
 };
 

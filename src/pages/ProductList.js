@@ -1,34 +1,53 @@
-import React from "react";
-import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../config/firebase"; // Giả sử bạn đã cấu hình Firestore trong firebase.js
 import { Link } from "react-router-dom";
 
 const ProductList = () => {
-  const products = [
-    { id: 1, name: "Sản phẩm A", price: "200.000đ", image: "/images/product1.jpg" },
-    { id: 2, name: "Sản phẩm B", price: "300.000đ", image: "/images/product2.jpg" },
-    { id: 3, name: "Sản phẩm C", price: "400.000đ", image: "/images/product3.jpg" },
-  ];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "products"));
+        const productList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setProducts(productList);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  if (loading) return <p>Loading products...</p>;
 
   return (
-    <Container className="mt-4">
-      <h2 className="text-center">Danh Sách Sản Phẩm</h2>
-      <Row>
+    <div className="container my-5">
+      <h2>Product List</h2>
+      <div className="row">
         {products.map((product) => (
-          <Col key={product.id} md={4}>
-            <Card className="mb-3">
-              <Card.Img variant="top" src={product.image} />
-              <Card.Body>
-                <Card.Title>{product.name}</Card.Title>
-                <Card.Text>{product.price}</Card.Text>
-                <Button as={Link} to={`/product/${product.id}`} variant="primary">
-                  Xem chi tiết
-                </Button>
-              </Card.Body>
-            </Card>
-          </Col>
+          <div key={product.product_id} className="col-md-4 mb-4">
+            <div className="card">
+              <img src={product.image_url} className="card-img-top" alt={product.name} />
+              <div className="card-body">
+                <h5 className="card-title">{product.name}</h5>
+                <p className="card-text">Price: ${product.price}</p>
+                <p className="card-text">Stock: {product.stock}</p>
+                <Link to={`/product/${product.product_id}`} className="btn btn-primary">
+                  View Details
+                </Link>
+              </div>
+            </div>
+          </div>
         ))}
-      </Row>
-    </Container>
+      </div>
+    </div>
   );
 };
 
