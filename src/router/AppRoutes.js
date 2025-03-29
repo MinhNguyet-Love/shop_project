@@ -11,12 +11,12 @@ import Profile from "../pages/Profile";
 import Contact from "../pages/Contact";
 import About from "../pages/About";
 import AdminDashboard from "../pages/admin/AdminDashboard";
-import ProtectedRoute from "../components/ProtectedRoute"; // Import ProtectedRoute
+import Promotions from "../pages/admin/Promotions"; // Thêm import
+import ProtectedRoute from "../components/ProtectedRoute";
 
 const AppRoutes = ({ user }) => {
   return (
     <Routes>
-      {/* Các trang công khai (public routes) */}
       <Route path="/" element={<Home />} />
       <Route path="/products" element={<ProductList />} />
       <Route path="/product/:id" element={<ProductDetail />} />
@@ -24,8 +24,6 @@ const AppRoutes = ({ user }) => {
       <Route path="/register" element={<Register />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/about" element={<About />} />
-
-      {/* Các trang được bảo vệ (protected routes) */}
       <Route
         path="/cart"
         element={
@@ -53,33 +51,16 @@ const AppRoutes = ({ user }) => {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute user={user}>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      {/* Thêm các route khác nếu cần bảo vệ, ví dụ: Orders, Favorites */}
-      <Route
-        path="/orders"
-        element={
-          <ProtectedRoute user={user}>
-            <div>My Orders Page (TBD)</div> {/* Placeholder */}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/favorites"
-        element={
-          <ProtectedRoute user={user}>
-            <div>My Favorites Page (TBD)</div> {/* Placeholder */}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
           <ProtectedRoute user={user} requireAdmin={true}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/promotions"
+        element={
+          <ProtectedRoute user={user} requireAdmin={true}>
+            <Promotions />
           </ProtectedRoute>
         }
       />
